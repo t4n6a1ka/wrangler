@@ -46,10 +46,10 @@ pub fn create_kv_namespaces(user: &GlobalUser, project: &Project) -> Result<(), 
 
     if let Some(namespaces) = &project.kv_namespaces {
         for namespace in namespaces {
-            info!("Attempting to create namespace '{}'", namespace);
+            info!("Attempting to create namespace '{}'", namespace.name);
 
             let mut map = HashMap::new();
-            map.insert("title", namespace);
+            map.insert("title", &namespace.name);
 
             let request = client
                 .post(&kv_addr)
@@ -64,15 +64,15 @@ pub fn create_kv_namespaces(user: &GlobalUser, project: &Project) -> Result<(), 
                 // https://api.cloudflare.com/#workers-kv-namespace-create-a-namespace
                 match error.status() {
                     Some(code) if code == 400 => {
-                        info!("Namespace '{}' already exists, continuing.", namespace)
+                        info!("Namespace '{}' already exists, continuing.", namespace.name)
                     }
                     _ => {
-                        info!("Error when creating namespace '{}'", namespace);
+                        info!("Error when creating namespace '{}'", namespace.name);
                         failure::bail!("⛔ Something went wrong! Error: {}", error)
                     }
                 }
             }
-            info!("Namespace '{}' exists now", namespace)
+            info!("Namespace '{}' exists now", namespace.name)
         }
     }
     Ok(())

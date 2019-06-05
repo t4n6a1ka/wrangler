@@ -9,6 +9,12 @@ use log::info;
 use config::{Config, Environment, File};
 use serde::{Deserialize, Serialize};
 
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct KvNamespace {
+    pub local_binding: String,
+    pub name: String,
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Project {
     pub name: String,
@@ -20,7 +26,7 @@ pub struct Project {
     pub route: Option<String>,
     pub routes: Option<HashMap<String, String>>,
     #[serde(rename = "kv-namespaces")]
-    pub kv_namespaces: Option<Vec<String>>,
+    pub kv_namespaces: Option<Vec<KvNamespace>>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

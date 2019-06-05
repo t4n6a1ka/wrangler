@@ -1,6 +1,6 @@
 pub mod wranglerjs;
 
-use crate::settings::project::ProjectType;
+use crate::settings::project::{Project, ProjectType};
 use crate::{commands, install};
 use binary_install::Cache;
 use std::env;
@@ -9,8 +9,8 @@ use std::process::Command;
 
 use crate::emoji;
 
-pub fn build(cache: &Cache, project_type: &ProjectType) -> Result<(), failure::Error> {
-    match project_type {
+pub fn build(cache: &Cache, project: &Project) -> Result<(), failure::Error> {
+    match project.project_type {
         ProjectType::JavaScript => {
             println!("⚠️ JavaScript project found. Skipping unnecessary build!")
         }
@@ -45,8 +45,13 @@ pub fn build(cache: &Cache, project_type: &ProjectType) -> Result<(), failure::E
                 failure::bail!("Webpack returned an error");
             }
 
+            let mut kv_namespaces = vec![];
+            if let Some(value) = &project.kv_namespaces {
+                kv_namespaces = value.clone();
+            }
+
             bundle
-                .write(wranglerjs_output)
+                .write(wranglerjs_output, kv_namespaces)
                 .expect("could not write bundle to disk");
 
             println!("{} Built successfully.", emoji::SPARKLES);
