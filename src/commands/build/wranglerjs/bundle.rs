@@ -7,6 +7,7 @@ use std::path::Path;
 
 use log::info;
 
+use crate::commands::build::wranglerjs::metadata;
 use crate::commands::build::wranglerjs::output::WranglerjsOutput;
 
 // Directory where we should write the {Bundle}. It represents the built
@@ -48,7 +49,8 @@ impl Bundle {
         script_file.write_all(script.as_bytes())?;
 
         let mut metadata_file = File::create(self.metadata_path())?;
-        metadata_file.write_all(create_metadata(self).as_bytes())?;
+        let metadata = create_metadata(self).expect("could not generate metadata");
+        metadata_file.write_all(metadata.as_bytes())?;
 
         // cleanup {Webpack} dist, if specified.
         if let Some(dist_to_clean) = wranglerjs_output.dist_to_clean {
@@ -106,31 +108,23 @@ pub fn create_prologue() -> String {
 }
 
 // This metadata describe the bindings on the Worker.
-fn create_metadata(bundle: &Bundle) -> String {
-    info!("create metadata; wasm={}", bundle.has_wasm());
+fn create_metadata(bundle: &Bundle) -> Result<String, serde_json::error::Error> {
+    info!("create metadata; wasm={}", bundle.has_wasm(),);
+
+    let mut bindings = vec![];
+
     if bundle.has_wasm() {
-        format!(
-            r#"
-                {{
-                    "body_part": "script",
-                    "binding": {{
-                        "name": "{name}",
-                        "type": "wasm_module",
-                        "part": "{name}"
-                    }}
-                }}
-            "#,
-            name = bundle.get_wasm_binding(),
-        )
-        .to_string()
-    } else {
-        r#"
-            {
-                "body_part": "script"
-            }
-        "#
-        .to_string()
+        bindings.push(metadata::Bindings {
+            binding_type: "wasm_module".to_string(),
+            name: bundle.get_wasm_binding(),
+            part: Some(bundle.get_wasm_binding()),
+        })
     }
+
+    serde_json::to_string(&metadata::Metadata {
+        body_part: "script".to_string(),
+        bindings,
+    })
 }
 
 #[cfg(test)]
@@ -164,14 +158,7 @@ mod tests {
         let contents =
             fs::read_to_string(&bundle.metadata_path()).expect("could not read metadata");
 
-        assert_eq!(
-            contents,
-            r#"
-            {
-                "body_part": "script"
-            }
-        "#
-        );
+        assert_eq!(contents, r#"{"body_part":"script","bindings":[]}"#);
 
         cleanup(out);
     }
@@ -230,16 +217,7 @@ mod tests {
 
         assert_eq!(
             contents,
-            r#"
-                {
-                    "body_part": "script",
-                    "binding": {
-                        "name": "wasmprogram",
-                        "type": "wasm_module",
-                        "part": "wasmprogram"
-                    }
-                }
-            "#
+            r#"{"body_part":"script","bindings":[{"name":"wasmprogram","type":"wasm_module","part":"wasmprogram"}]}"#
         );
 
         cleanup(out);
