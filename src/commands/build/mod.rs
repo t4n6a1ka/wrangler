@@ -51,10 +51,18 @@ pub fn build(cache: &Cache, project: &Project) -> Result<(), failure::Error> {
             }
 
             bundle
-                .write(wranglerjs_output, kv_namespaces)
+                .write(&wranglerjs_output, kv_namespaces)
                 .expect("could not write bundle to disk");
 
-            println!("{} Built successfully.", emoji::SPARKLES);
+            print!(
+                "{} Built successfully, script size is {}",
+                emoji::SPARKLES,
+                wranglerjs_output.script_size()
+            );
+            if bundle.has_wasm() {
+                print!(" and Wasm size is {}", wranglerjs_output.wasm_size());
+            }
+            println!(".");
         }
     }
 
