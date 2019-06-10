@@ -7,14 +7,17 @@ pub mod package;
 use package::Package;
 
 use log::info;
-
-use reqwest::multipart::Form;
 use std::collections::HashMap;
 use std::fs;
+use std::fs::File;
+use std::io::prelude::*;
 use std::path::Path;
 
-use crate::commands::build::wranglerjs::Bundle;
+use reqwest::multipart::Form;
+
+use crate::commands::build::wranglerjs::{bundle, Bundle};
 use crate::commands::subdomain::Subdomain;
+use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::project::{Project, ProjectType};
 
@@ -42,7 +45,7 @@ pub fn create_kv_namespaces(user: &GlobalUser, project: &Project) -> Result<(), 
         project.account_id,
     );
 
-    let client = reqwest::Client::new();
+    let client = http::client();
 
     if let Some(namespaces) = &project.kv_namespaces {
         for namespace in namespaces {
@@ -91,7 +94,7 @@ fn publish_script(
         project.account_id, project.name,
     );
 
-    let client = reqwest::Client::new();
+    let client = http::client();
 
     let project_type = &project.project_type;
     let mut res = match project_type {
@@ -116,6 +119,15 @@ fn publish_script(
         }
         ProjectType::Webpack => {
             info!("Webpack project detected. Publishing...");
+
+            // FIXME(sven): shouldn't new
+            let bundle = Bundle::new();
+
+            let metadata = bundle::create_metadata(&bundle);
+            info!("generate metadata {:?}", metadata);
+            let mut metadata_file = File::create(bundle.metadata_path())?;
+            metadata_file.write_all(metadata.as_bytes())?;
+
             client
                 .put(&worker_addr)
                 .header("X-Auth-Key", &*user.api_key)
@@ -159,7 +171,7 @@ fn make_public_on_subdomain(project: &Project, user: &GlobalUser) -> Result<(), 
         project.account_id, project.name,
     );
 
-    let client = reqwest::Client::new();
+    let client = http::client();
 
     info!("Making public on subdomain...");
     let mut res = client

@@ -48,10 +48,6 @@ impl Bundle {
 
         script_file.write_all(script.as_bytes())?;
 
-        let mut metadata_file = File::create(self.metadata_path())?;
-        let metadata = create_metadata(self).expect("could not generate metadata");
-        metadata_file.write_all(metadata.as_bytes())?;
-
         // cleanup {Webpack} dist, if specified.
         if let Some(dist_to_clean) = &wranglerjs_output.dist_to_clean {
             info!("Remove {}", dist_to_clean);
@@ -143,8 +139,8 @@ mod tests {
     }
 
     #[test]
-    fn it_writes_the_bundle_metadata() {
-        let out = create_temp_dir("it_writes_the_bundle_metadata");
+    fn it_creates_the_bundle_metadata() {
+        let out = create_temp_dir("it_creates_the_bundle_metadata");
         let wranglerjs_output = WranglerjsOutput {
             errors: vec![],
             script: "".to_string(),
@@ -154,11 +150,12 @@ mod tests {
         let bundle = Bundle::new_at(out.clone());
 
         bundle.write(&wranglerjs_output).unwrap();
-        assert!(Path::new(&bundle.metadata_path()).exists());
-        let contents =
-            fs::read_to_string(&bundle.metadata_path()).expect("could not read metadata");
+        assert_eq!(Path::new(&bundle.metadata_path()).exists(), false);
 
-        assert_eq!(contents, r#"{"body_part":"script","bindings":[]}"#);
+        assert_eq!(
+            create_metadata(&bundle),
+            r#"{"body_part":"script","bindings":[]}"#
+        );
 
         cleanup(out);
     }
@@ -200,8 +197,8 @@ mod tests {
     }
 
     #[test]
-    fn it_writes_the_bundle_wasm_metadata() {
-        let out = create_temp_dir("it_writes_the_bundle_wasm_metadata");
+    fn it_creates_the_bundle_wasm_metadata() {
+        let out = create_temp_dir("it_creates_the_bundle_wasm_metadata");
         let wranglerjs_output = WranglerjsOutput {
             errors: vec![],
             script: "".to_string(),
@@ -211,12 +208,10 @@ mod tests {
         let bundle = Bundle::new_at(out.clone());
 
         bundle.write(&wranglerjs_output).unwrap();
-        assert!(Path::new(&bundle.metadata_path()).exists());
-        let contents =
-            fs::read_to_string(&bundle.metadata_path()).expect("could not read metadata");
+        assert_eq!(Path::new(&bundle.metadata_path()).exists(), false);
 
         assert_eq!(
-            contents,
+            create_metadata(&bundle),
             r#"{"body_part":"script","bindings":[{"name":"wasmprogram","type":"wasm_module","part":"wasmprogram"}]}"#
         );
 
