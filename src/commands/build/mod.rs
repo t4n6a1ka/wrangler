@@ -45,13 +45,8 @@ pub fn build(cache: &Cache, project: &Project) -> Result<(), failure::Error> {
                 failure::bail!("Webpack returned an error");
             }
 
-            let mut kv_namespaces = vec![];
-            if let Some(value) = &project.kv_namespaces {
-                kv_namespaces = value.clone();
-            }
-
             bundle
-                .write(&wranglerjs_output, kv_namespaces)
+                .write(&wranglerjs_output)
                 .expect("could not write bundle to disk");
 
             print!(
