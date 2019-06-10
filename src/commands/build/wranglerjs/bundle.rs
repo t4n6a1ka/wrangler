@@ -104,9 +104,7 @@ pub fn create_prologue() -> String {
 }
 
 // This metadata describe the bindings on the Worker.
-fn create_metadata(bundle: &Bundle) -> Result<String, serde_json::error::Error> {
-    info!("create metadata; wasm={}", bundle.has_wasm(),);
-
+pub fn create_metadata(bundle: &Bundle) -> Result<String, serde_json::error::Error> {
     let mut bindings = vec![];
 
     if bundle.has_wasm() {
@@ -153,7 +151,7 @@ mod tests {
         assert_eq!(Path::new(&bundle.metadata_path()).exists(), false);
 
         assert_eq!(
-            create_metadata(&bundle),
+            create_metadata(&bundle).unwrap(),
             r#"{"body_part":"script","bindings":[]}"#
         );
 
@@ -211,7 +209,7 @@ mod tests {
         assert_eq!(Path::new(&bundle.metadata_path()).exists(), false);
 
         assert_eq!(
-            create_metadata(&bundle),
+            create_metadata(&bundle).unwrap(),
             r#"{"body_part":"script","bindings":[{"name":"wasmprogram","type":"wasm_module","part":"wasmprogram"}]}"#
         );
 
