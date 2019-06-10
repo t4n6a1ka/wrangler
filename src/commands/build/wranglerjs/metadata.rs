@@ -6,6 +6,7 @@ pub struct Bindings {
     #[serde(rename = "type")]
     pub binding_type: String,
     pub part: Option<String>,
+    pub namespace_id: Option<String>,
 }
 
 #[derive(Serialize, Debug)]

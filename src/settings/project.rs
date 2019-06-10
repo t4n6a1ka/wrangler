@@ -13,6 +13,7 @@ use serde::{Deserialize, Serialize};
 pub struct KvNamespace {
     pub local_binding: String,
     pub name: String,
+    pub namespace_id: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

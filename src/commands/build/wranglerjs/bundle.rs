@@ -121,6 +121,7 @@ pub fn create_metadata(
         bindings.push(metadata::Bindings {
             binding_type: "kv_namespace".to_string(),
             name: namespace.local_binding.clone(),
+            namespace_id: namespace.namespace_id.clone(),
             part: None,
         });
     }
@@ -129,6 +130,7 @@ pub fn create_metadata(
         bindings.push(metadata::Bindings {
             binding_type: "wasm_module".to_string(),
             name: bundle.get_wasm_binding(),
+            namespace_id: None,
             part: Some(bundle.get_wasm_binding()),
         })
     }
